@@ -3,6 +3,10 @@ package com.pgc.stress_predict.controller;
 import com.pgc.stress_predict.model.Usuario;
 import com.pgc.stress_predict.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+<<<<<<< HEAD
+=======
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+>>>>>>> dev
 import org.springframework.web.bind.annotation.*;
 
 @RestController
