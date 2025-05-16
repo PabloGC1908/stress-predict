@@ -85,15 +85,6 @@ fun LoginScreen(
         ) {
             Text("¿No tienes cuenta? Regístrate")
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Enlace para recuperar contraseña
-        TextButton(
-            onClick = { /* TODO: Implementar recuperación */ }
-        ) {
-            Text("¿Olvidaste tu contraseña?")
-        }
     }
 }
 

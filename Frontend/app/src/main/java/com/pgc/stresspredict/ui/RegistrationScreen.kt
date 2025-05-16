@@ -15,13 +15,15 @@ import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 @Composable
 fun RegistrationScreen(
+    onNavigateToLogin: () -> Unit,
     onRegisterSuccess: () -> Unit = {},
 ) {
     var nombres by remember { mutableStateOf("") }
     var apellidos by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var codigo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordsMatch by remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
@@ -70,25 +72,44 @@ fun RegistrationScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = codigo,
-            onValueChange = { codigo = it },
-            label = { Text("Código de estudiante") },
+            value = password,
+            onValueChange = {
+                password = it
+                passwordsMatch = it == confirmPassword // Validar en tiempo real
+            },
+            label = { Text("Contraseña") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            isError = !passwordsMatch && password.isNotEmpty()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            value = confirmPassword,
+            onValueChange = {
+                confirmPassword = it
+                passwordsMatch = it == password // Validar en tiempo real
+            },
+            label = { Text("Repetir Contraseña") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            isError = !passwordsMatch && confirmPassword.isNotEmpty()
         )
+
+        // Mostrar mensaje de error si las contraseñas no coinciden
+        if (!passwordsMatch && confirmPassword.isNotEmpty()) {
+            Text(
+                text = "Las contraseñas no coinciden",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -103,6 +124,13 @@ fun RegistrationScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Enlace para regresar al login
+        TextButton(
+            onClick = onNavigateToLogin
+        ) {
+            Text("¿Ya tienes cuenta? Inicia Sesion")
+        }
+
     }
 }
 
@@ -110,7 +138,10 @@ fun RegistrationScreen(
 @Composable
 fun RegistrationScreenPreview() {
     StressPredictTheme {
-        RegistrationScreen()
+        RegistrationScreen(
+            onNavigateToLogin = {},
+            onRegisterSuccess = {}
+        )
     }
 }
 
