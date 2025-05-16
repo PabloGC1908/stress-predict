@@ -11,7 +11,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.pgc.stresspredict.data.ApiService
+import com.pgc.stresspredict.data.RetrofitClient
+import com.pgc.stresspredict.data.Usuario
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun RegistrationScreen(
@@ -23,6 +29,8 @@ fun RegistrationScreen(
     var codigo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
+    val apiService = RetrofitClient.instance.create(ApiService::class.java)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -30,14 +38,12 @@ fun RegistrationScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Encabezado
         Text(
             text = "Registro",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
-        // Campos del formulario
         OutlinedTextField(
             value = nombres,
             onValueChange = { nombres = it },
@@ -92,9 +98,30 @@ fun RegistrationScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Botones
         Button(
-            onClick = onRegisterSuccess,
+            onClick = {
+                val usuario = Usuario(
+                    correo = email,
+                    contrasena = password,
+                    nombres = nombres,
+                    apellidos = apellidos,
+                    codigo = codigo
+                )
+
+                apiService.registrar(usuario).enqueue(object : Callback<String> {
+                    override fun onResponse(call: Call<String>, response: Response<String>) {
+                        if (response.isSuccessful) {
+                            onRegisterSuccess()
+                        } else {
+                            // Mostrar error
+                        }
+                    }
+
+                    override fun onFailure(call: Call<String>, t: Throwable) {
+                        // Mostrar error de red
+                    }
+                })
+            },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
         ) {
@@ -102,7 +129,6 @@ fun RegistrationScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-
     }
 }
 
@@ -113,4 +139,3 @@ fun RegistrationScreenPreview() {
         RegistrationScreen()
     }
 }
-
