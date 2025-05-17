@@ -11,7 +11,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.pgc.stresspredict.data.ApiService
+import com.pgc.stresspredict.data.RetrofitClient
+import com.pgc.stresspredict.data.Usuario
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 @Composable
 fun LoginScreen(
@@ -20,7 +26,9 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val isLoading by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val apiService = RetrofitClient.instance.create(ApiService::class.java)
 
     Column(
         modifier = Modifier
@@ -29,14 +37,12 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Título
         Text(
             text = "StressPredict",
             style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.padding(bottom = 48.dp)
         )
 
-        // Campo de correo
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -48,7 +54,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo de contraseña
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -61,14 +66,29 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Botón de Login
         Button(
-            onClick = onLoginSuccess,
+            onClick = {
+                isLoading = true
+                val usuario = Usuario(correo = email, contrasena = password)
+                apiService.login(usuario).enqueue(object : Callback<String> {
+                    override fun onResponse(call: Call<String>, response: Response<String>) {
+                        isLoading = false
+                        if (response.isSuccessful) {
+                            onLoginSuccess()
+                        } else {
+                            // Aquí podrías mostrar un mensaje de error
+                        }
+                    }
+
+                    override fun onFailure(call: Call<String>, t: Throwable) {
+                        isLoading = false
+                        // Aquí podrías mostrar un mensaje de error de red
+                    }
+                })
+            },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4CAF50)
-            )
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
         ) {
             if (isLoading) {
                 CircularProgressIndicator(color = Color.White)
@@ -79,10 +99,7 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Enlace para registrarse
-        TextButton(
-            onClick = onNavigateToRegister
-        ) {
+        TextButton(onClick = onNavigateToRegister) {
             Text("¿No tienes cuenta? Regístrate")
         }
     }
