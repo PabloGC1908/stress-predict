@@ -26,7 +26,8 @@ class MainActivity : ComponentActivity() {
                         onLoginSuccess = { /* Lógica después de login exitoso */ }
                     )
                     Screen.Register -> RegistrationScreen(
-                        onRegisterSuccess = { /* Lógica después de registro exitoso */ }
+                        onRegisterSuccess = { /* Lógica después de registro exitoso */ },
+                        onNavigateToLogin = {currentScreen = Screen.Login},
                     )
                 }
             }
