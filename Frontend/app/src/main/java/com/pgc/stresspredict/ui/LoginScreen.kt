@@ -102,12 +102,6 @@ fun LoginScreen(
         TextButton(onClick = onNavigateToRegister) {
             Text("¿No tienes cuenta? Regístrate")
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(onClick = { /* TODO */ }) {
-            Text("¿Olvidaste tu contraseña?")
-        }
     }
 }
 
