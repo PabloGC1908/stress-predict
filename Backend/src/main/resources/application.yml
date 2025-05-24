@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: stress-predict
+
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/stress_prediction_db?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: ${db_username}
+    password: ${db_password}
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        ddl-auto: update
+      show-sql: true
+      open-in-view: true
+
+server:
+  port: 8081
