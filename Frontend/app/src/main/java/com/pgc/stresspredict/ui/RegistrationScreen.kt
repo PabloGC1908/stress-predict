@@ -126,7 +126,6 @@ fun RegistrationScreen(
                     contrasena = password,
                     nombres = nombres,
                     apellidos = apellidos,
-                    codigo = codigo
                 )
 
                 apiService.registrar(usuario).enqueue(object : Callback<String> {
@@ -150,6 +149,10 @@ fun RegistrationScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        TextButton(onClick = onNavigateToLogin) {
+            Text("¿Ya tienes cuenta? Inicia Sesion")
+        }
     }
 }
 
