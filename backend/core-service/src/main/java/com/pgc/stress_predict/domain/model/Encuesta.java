@@ -33,13 +33,13 @@ public class Encuesta {
     private Float horasExtracurricularDia;
 
     @Column(name = "horas_sueno_dia")
-    private Integer horasSuenoDia;
+    private Float horasSuenoDia;
 
     @Column(name = "horas_social_dia")
-    private Integer horasSocialDia;
+    private Float horasSocialDia;
 
     @Column(name = "horas_actividad_fisica")
-    private Boolean horasActividadFisica;
+    private Float horasActividadFisica;
 
     private String comentario;
 
