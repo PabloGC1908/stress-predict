@@ -53,6 +53,8 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
 // Conversor JSON (usado por Retrofit)
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("androidx.fragment:fragment:1.8.7")
+    implementation("androidx.recyclerview:recyclerview:1.4.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
