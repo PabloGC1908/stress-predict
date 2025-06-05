@@ -17,7 +17,7 @@ import com.pgc.stresspredict.ui.ProfileScreen
 import com.pgc.stresspredict.ui.BottomNavigationBar
 import com.pgc.stresspredict.ui.HistoryScreen
 import com.pgc.stresspredict.ui.MainScreen
-import com.pgc.stresspredict.ui.RecommendationsScreen
+import com.pgc.stresspredict.ui.RecommendationScreen
 import com.pgc.stresspredict.ui.SurveyScreen
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
@@ -51,7 +51,7 @@ class MainActivity : ComponentActivity() {
                                 Screen.Survey -> SurveyScreen()
                                 Screen.History -> HistoryScreen()
                                 Screen.Main -> MainScreen()
-                                Screen.Recommendations -> RecommendationsScreen()
+                                Screen.Recommendations -> RecommendationScreen()
                                 Screen.Profile -> ProfileScreen(
                                     onNavigateBack = { currentScreen = Screen.Login },
                                     onEditProfile = {
