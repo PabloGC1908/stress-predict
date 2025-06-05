@@ -49,17 +49,32 @@ class MainActivity : ComponentActivity() {
                         Box(modifier = Modifier.padding(innerPadding)) {
                             when (currentScreen) {
                                 Screen.Survey -> SurveyScreen()
-                                Screen.History -> HistoryScreen()
-                                Screen.Main -> MainScreen()
-                                Screen.Recommendations -> RecommendationsScreen()
+                                Screen.History -> HistoryScreen(
+                                    currentScreen = currentScreen,
+                                    onNavigate = { newScreen -> currentScreen = newScreen },
+                                    onNavigateBack = { currentScreen = Screen.Main }
+                                )
+                                Screen.Main -> MainScreen(
+                                    currentScreen = currentScreen,
+                                    onNavigate = { newScreen -> currentScreen = newScreen },
+                                    onNavigateBack = { currentScreen = Screen.Profile }
+                                )
+                                Screen.Recommendations -> RecommendationsScreen(
+                                    currentScreen = currentScreen,
+                                    onNavigate = { newScreen -> currentScreen = newScreen },
+                                    onNavigateBack = { currentScreen = Screen.Main }
+                                )
                                 Screen.Profile -> ProfileScreen(
-                                    onNavigateBack = { currentScreen = Screen.Login },
+                                    currentScreen = currentScreen, // Pasamos la pantalla actual
+                                    onNavigate = { newScreen -> currentScreen = newScreen }, // Manejo de navegación
+                                    onNavigateBack = { currentScreen = Screen.Main }, // O la pantalla que corresponda
                                     onEditProfile = {
                                         // Lógica para editar perfil
                                     }
                                 )
                                 else -> Unit
                             }
+
                         }
                     }
                 } else {

@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.pgc.stresspredict"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -55,6 +55,7 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("androidx.fragment:fragment:1.8.7")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
+    implementation(libs.androidx.compose.material)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
