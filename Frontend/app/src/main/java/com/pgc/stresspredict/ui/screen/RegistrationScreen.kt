@@ -1,4 +1,4 @@
-package com.pgc.stresspredict.ui
+package com.pgc.stresspredict.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions

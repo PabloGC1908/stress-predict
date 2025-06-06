@@ -1,4 +1,4 @@
-package com.pgc.stresspredict.ui
+package com.pgc.stresspredict.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -37,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pgc.stresspredict.Screen
+import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

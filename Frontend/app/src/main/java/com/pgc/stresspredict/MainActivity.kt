@@ -11,14 +11,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.pgc.stresspredict.ui.LoginScreen
-import com.pgc.stresspredict.ui.RegistrationScreen
-import com.pgc.stresspredict.ui.ProfileScreen
-import com.pgc.stresspredict.ui.BottomNavigationBar
-import com.pgc.stresspredict.ui.HistoryScreen
-import com.pgc.stresspredict.ui.MainScreen
-import com.pgc.stresspredict.ui.RecommendationsScreen
-import com.pgc.stresspredict.ui.SurveyScreen
+import com.pgc.stresspredict.ui.screen.LoginScreen
+import com.pgc.stresspredict.ui.screen.RegistrationScreen
+import com.pgc.stresspredict.ui.screen.ProfileScreen
+import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
+import com.pgc.stresspredict.ui.screen.HistoryScreen
+import com.pgc.stresspredict.ui.screen.MainScreen
+import com.pgc.stresspredict.ui.screen.RecommendationsScreen
+import com.pgc.stresspredict.ui.screen.SurveyScreen
+import com.pgc.stresspredict.ui.screen.ResultsScreen
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 class MainActivity : ComponentActivity() {
@@ -48,7 +49,14 @@ class MainActivity : ComponentActivity() {
                     ) { innerPadding ->
                         Box(modifier = Modifier.padding(innerPadding)) {
                             when (currentScreen) {
-                                Screen.Survey -> SurveyScreen()
+                                Screen.Survey -> SurveyScreen(
+                                    currentScreen = currentScreen,
+                                    onNavigate = { newScreen -> currentScreen = newScreen },
+                                    onNavigateBack = { currentScreen = Screen.Main },
+                                    onSubmitSurvey = {
+                                        // Lógica para enviar la encuesta
+                                    }
+                                )
                                 Screen.History -> HistoryScreen(
                                     currentScreen = currentScreen,
                                     onNavigate = { newScreen -> currentScreen = newScreen },
@@ -78,7 +86,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 } else {
-                    // Pantallas SIN barra (Login/Register)
+                    // Pantallas SIN barra
                     when (currentScreen) {
                         Screen.Login -> LoginScreen(
                             onNavigateToRegister = { currentScreen = Screen.Register },
@@ -87,6 +95,12 @@ class MainActivity : ComponentActivity() {
                         Screen.Register -> RegistrationScreen(
                             onRegisterSuccess = { currentScreen = Screen.Profile },
                             onNavigateToLogin = { currentScreen = Screen.Login }
+                        )
+                        Screen.Results -> ResultsScreen(
+                            onNavigateBack = { currentScreen = Screen.Survey },
+                            onNavigateToHome = { currentScreen = Screen.Main },
+                            stressLevel = "Bajo",
+                            stressImproved = true
                         )
                         else -> Unit
                     }
@@ -107,4 +121,5 @@ sealed class Screen(val iconRes: Int, val label: String) {
     // Pantallas sin barra
     data object Login : Screen(0, "")
     data object Register : Screen(0, "")
+    data object Results : Screen(0, "")
 }

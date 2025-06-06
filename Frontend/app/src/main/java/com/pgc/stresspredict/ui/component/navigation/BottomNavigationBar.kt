@@ -1,4 +1,4 @@
-package com.pgc.stresspredict.ui
+package com.pgc.stresspredict.ui.component.navigation
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon

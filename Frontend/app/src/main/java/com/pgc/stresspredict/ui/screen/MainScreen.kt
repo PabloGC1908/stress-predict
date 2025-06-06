@@ -1,4 +1,4 @@
-package com.pgc.stresspredict.ui
+package com.pgc.stresspredict.ui.screen
 
 import android.content.Intent
 import androidx.compose.foundation.Image
@@ -42,6 +42,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.pgc.stresspredict.R
 import com.pgc.stresspredict.Screen
+import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -56,6 +56,7 @@ dependencies {
     implementation("androidx.fragment:fragment:1.8.7")
     implementation("androidx.recyclerview:recyclerview:1.4.0")
     implementation(libs.androidx.compose.material)
+    implementation(libs.play.services.dtdi)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
