@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Entity
 @Getter
@@ -60,13 +61,19 @@ public class Usuario implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + rol.getRol().name()));
 
-        this.getRol().getPermisos()
-                .forEach(permiso -> authorities.add(new SimpleGrantedAuthority(permiso.getPermiso())));
+        Optional.ofNullable(rol).ifPresent(r -> {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + r.getRol().name()));
+            Optional.ofNullable(r.getPermisos()).ifPresent(permisos ->
+                    permisos.forEach(p ->
+                            authorities.add(new SimpleGrantedAuthority(p.getPermiso()))
+                    )
+            );
+        });
 
         return authorities;
     }
+
 
     @Override
     public String getUsername() {
