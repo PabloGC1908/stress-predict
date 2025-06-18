@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8082
 
 spring:
   application:
@@ -10,15 +10,34 @@ spring:
         locator:
           enabled: true
       routes:
-        - id: usuario-service
+        - id: core-service
           uri: 'http://localhost:8083'
           predicates:
-            - Path=/api/v1/auth/**, /api/v1/roles/**, /api/v1/users/**
+            - Path=/api/auth/**, /api/roles/**, /api/users/**
 
 
-        - id: vuelo-service
+        - id: ml-service
           uri: 'http://localhost:8084'
           predicates:
-            - Path=/api/v1/airlines/**, /api/v1/airports/**, /api/v1/flights/**
+            - Path=/api/**, /api/**
           filters:
             - name: AuthenticationFilter
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"  # Permite el origen de tu frontend
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+
+security:
+  jwt:
+    privateKey: 4a0d045593e609435c401089d91421cca7ce6a47425b6541b84f8ef9546955f4
+    userGenerator: authJwt-Yoquito

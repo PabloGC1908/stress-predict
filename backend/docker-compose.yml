@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  gateway-service:
+    build:
+      context: ./gateway-service
+    container_name: gateway-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - core-service
+      - ml-service
+
+  core-service:
+    build:
+      context: ./core-service
+    container_name: core-service
+    ports:
+      - "8082:8082"
+    environment:
+      db_username: pgc
+      db_password: pgcpass
+    depends_on:
+      - mysql
+
+  ml-service:
+    build:
+      context: ./ml-service
+    container_name: ml-service
+    ports:
+      - "8000:8000"
+
+  mysql:
+    image: mysql:8
+    container_name: mysql-stress-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: stress_prediction_db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: pgc
+      MYSQL_PASSWORD: pgcpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  mysql-data:
