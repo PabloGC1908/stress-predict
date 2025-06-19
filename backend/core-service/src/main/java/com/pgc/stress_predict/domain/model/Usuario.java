@@ -52,10 +52,10 @@ public class Usuario implements UserDetails {
     @JoinColumn(name = "id_usuario_info")
     private UsuarioInfo usuarioInfo;
 
-    @Column(name = "fecha_creacion", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column(name = "fecha_creacion", nullable = false)
     private OffsetDateTime fechaCreacion;
 
-    @Column(name = "ultimo_inicio_sesion", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column(name = "ultimo_inicio_sesion", nullable = false)
     private OffsetDateTime ultimoInicioSesion;
 
     @Override
