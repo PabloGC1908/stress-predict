@@ -41,15 +41,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.pgc.stresspredict.R
-import com.pgc.stresspredict.Screen
-import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    currentScreen: Screen = Screen.Main,
-    onNavigate: (Screen) -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -65,16 +61,6 @@ fun MainScreen(
                 }
             )
         },
-        bottomBar = {
-            BottomNavigationBar(
-                currentScreen = currentScreen,
-                onItemClick = { screen ->
-                    if (screen != currentScreen) {
-                        onNavigate(screen)
-                    }
-                }
-            )
-        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -228,8 +214,6 @@ fun getStressManagementArticles(): List<BlogArticle> {
 fun MainScreenPreview() {
     StressPredictTheme {
         MainScreen(
-            currentScreen = Screen.Main,
-            onNavigate = {},
             onNavigateBack = {}
         )
     }

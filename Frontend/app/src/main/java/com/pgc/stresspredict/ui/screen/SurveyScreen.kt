@@ -34,13 +34,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pgc.stresspredict.Screen
-import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurveyScreen(
-    currentScreen: Screen = Screen.Survey,
     onNavigate: (Screen) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onSubmitSurvey: (EncuestaRequest) -> Unit = {}
@@ -64,16 +62,6 @@ fun SurveyScreen(
                 }
             )
         },
-        bottomBar = {
-            BottomNavigationBar(
-                currentScreen = currentScreen,
-                onItemClick = { screen ->
-                    if (screen != currentScreen) {
-                        onNavigate(screen)
-                    }
-                }
-            )
-        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -230,7 +218,6 @@ data class EncuestaRequest(
 fun SurveyScreenPreview() {
     StressPredictTheme {
         SurveyScreen(
-            currentScreen = Screen.Survey,
             onNavigate = {},
             onNavigateBack = {},
             onSubmitSurvey = {}

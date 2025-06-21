@@ -36,15 +36,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.pgc.stresspredict.Screen
-import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecommendationsScreen(
-    currentScreen: Screen = Screen.Recommendations,
-    onNavigate: (Screen) -> Unit = {},
     onNavigateBack: () -> Unit = {}
 ) {
     Scaffold(
@@ -58,16 +54,6 @@ fun RecommendationsScreen(
                 }
             )
         },
-        bottomBar = {
-            BottomNavigationBar(
-                currentScreen = currentScreen,
-                onItemClick = { screen ->
-                    if (screen != currentScreen) {
-                        onNavigate(screen)
-                    }
-                }
-            )
-        }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -156,8 +142,6 @@ fun RecommendationCard(
 fun RecommendationsScreenPreview() {
     StressPredictTheme {
         RecommendationsScreen(
-            currentScreen = Screen.Recommendations,
-            onNavigate = {},
             onNavigateBack = {}
         )
     }

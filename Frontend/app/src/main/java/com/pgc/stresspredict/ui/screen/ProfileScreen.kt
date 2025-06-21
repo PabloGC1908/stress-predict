@@ -20,15 +20,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.pgc.stresspredict.R
-import com.pgc.stresspredict.Screen
-import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    currentScreen: Screen = Screen.Profile, // Nuevo parámetro
-    onNavigate: (Screen) -> Unit = {},     // Para la barra de navegación
     onNavigateBack: () -> Unit,           // Para el botón de retroceso
     onEditProfile: () -> Unit
 ) {
@@ -48,16 +44,6 @@ fun ProfileScreen(
                 }
             )
         },
-        bottomBar = { // Agregamos la barra de navegación
-            BottomNavigationBar(
-                currentScreen = currentScreen,
-                onItemClick = { screen ->
-                    if (screen != currentScreen) {
-                        onNavigate(screen)
-                    }
-                }
-            )
-        }
 
     ) { innerPadding ->
         Column(
@@ -151,8 +137,6 @@ fun ProfileInfoItem(title: String, value: String) {
 fun ProfileScreenPreview() {
     StressPredictTheme { // Usa el tema de tu app
         ProfileScreen(
-            currentScreen = Screen.Profile,
-            onNavigate = {},
             onNavigateBack = {},
             onEditProfile = {}
         )
