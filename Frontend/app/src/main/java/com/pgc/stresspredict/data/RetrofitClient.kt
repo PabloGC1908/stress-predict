@@ -8,8 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    // Configuración base
-    private const val BASE_URL = "http://192.168.18.7:8081/api/" // Cambiado a puerto 8080 para coincidir con tu backend
+    private const val BASE_URL = "http://192.168.18.7:8081/api/"
     private const val CONNECT_TIMEOUT = 15L
     private const val READ_TIMEOUT = 15L
 
