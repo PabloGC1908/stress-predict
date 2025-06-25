@@ -12,7 +12,8 @@ public class RouterValidator {
     // Las rutas de esta lista no van a necesitar de tokens
     public static final List<String> openApiEndpoints = List.of(
             "/api/auth/log-in",
-            "/api/auth/sign-up"
+            "/api/auth/sign-up",
+            "/api/ml/predict"
     );
 
     public Predicate<ServerHttpRequest> isSecured =

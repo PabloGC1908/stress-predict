@@ -21,7 +21,7 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.post("/predict")
+@app.post("/api/ml/predict")
 async def predecir_estres(formulario: FormularioInput):
     input_data = [[
         formulario.study_hours_per_day,
