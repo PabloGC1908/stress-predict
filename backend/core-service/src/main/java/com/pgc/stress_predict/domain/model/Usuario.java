@@ -43,11 +43,7 @@ public class Usuario implements UserDetails {
 
     @Column(name = "account_non_locked")
     private Boolean accountNonLocked;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_rol")
-    private Rol rol;
-
+    
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "id_usuario_info")
     private UsuarioInfo usuarioInfo;
@@ -57,6 +53,13 @@ public class Usuario implements UserDetails {
 
     @Column(name = "ultimo_inicio_sesion", nullable = false)
     private OffsetDateTime ultimoInicioSesion;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_rol")
+    private Rol rol;
+
+    @OneToMany(mappedBy = "usuario", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Encuesta> historial;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
