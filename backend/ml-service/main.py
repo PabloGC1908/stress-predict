@@ -3,6 +3,13 @@ from starlette.middleware.cors import CORSMiddleware
 import joblib
 
 from models.FormularioInput import FormularioInput
+from kafka import KafkaProducer
+import json
+
+producer = KafkaProducer(
+    bootstrap_servers='localhost:9092',
+    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+)
 
 app = FastAPI()
 model = joblib.load("./model/stress_model.joblib")
@@ -32,13 +39,28 @@ async def predecir_estres(formulario: FormularioInput):
         formulario.gpa
     ]]
 
-    prediccion = model.predict(input_data)
+    prediccion = model.predict(input_data)[0]
+
+    resultado = {
+        "entrada": {
+            "horas_estudio": formulario.study_hours_per_day,
+            "horas_extracurriculares": formulario.extracurricular_hours_per_day,
+            "horas_sueno": formulario.sleep_hours_per_day,
+            "horas_sociales": formulario.social_hours_per_day,
+            "actividad_fisica": formulario.physical_activity_hours_per_day,
+            "promedio_calificaciones": formulario.gpa
+        },
+        "prediccion": prediccion
+    }
+
+    # Enviamos a Kafka
+    producer.send("predicciones-estres", value=resultado)
 
     if prediccion == "Low":
         return "Bajo estrés"
     elif prediccion == "Moderate":
-        return "Bajo estrés"
+        return "Estrés moderado"
     else:
-        return "Bajo estrés"
+        return "Alto estrés"
 
 
