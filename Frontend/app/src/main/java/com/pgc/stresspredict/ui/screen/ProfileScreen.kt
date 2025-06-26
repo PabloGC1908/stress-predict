@@ -1,6 +1,6 @@
 @file:Suppress("PreviewAnnotationInFunctionWithParameters")
 
-package com.pgc.stresspredict.ui
+package com.pgc.stresspredict.ui.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -25,7 +25,7 @@ import com.pgc.stresspredict.ui.theme.StressPredictTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    onNavigateBack: () -> Unit,
+    onNavigateBack: () -> Unit,           // Para el botón de retroceso
     onEditProfile: () -> Unit
 ) {
     Scaffold(
@@ -43,7 +43,8 @@ fun ProfileScreen(
                     }
                 }
             )
-        }
+        },
+
     ) { innerPadding ->
         Column(
             modifier = Modifier
