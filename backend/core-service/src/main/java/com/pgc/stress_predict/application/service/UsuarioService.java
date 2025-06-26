@@ -1,7 +1,7 @@
 package com.pgc.stress_predict.application.service;
 
 import com.pgc.stress_predict.application.dto.response.HistorialUsuarioResponse;
-import com.pgc.stress_predict.domain.model.Usuario;
+import com.pgc.stress_predict.application.dto.response.PerfilUsuarioResponse;
 import com.pgc.stress_predict.domain.port.out.UsuarioRepository;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -29,5 +29,19 @@ public class UsuarioService {
             throw new UsernameNotFoundException("El id de usuario no se encontro");
         else
             return historialUsuario.get();
+    }
+
+    public PerfilUsuarioResponse findPerfilUsuario(Long usuarioId) {
+        if (usuarioId == null)
+            throw new UsernameNotFoundException("El id de usuario no puede ser nulo");
+
+        Optional<PerfilUsuarioResponse> perfilUsuario = Optional.ofNullable(
+                usuarioRepository.findPerfilById(usuarioId)
+        );
+
+        if (perfilUsuario.isEmpty())
+            throw new UsernameNotFoundException("El id de usuario no se encontro");
+        else
+            return perfilUsuario.get();
     }
 }

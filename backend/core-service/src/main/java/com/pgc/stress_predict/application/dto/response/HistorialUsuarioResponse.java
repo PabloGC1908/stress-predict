@@ -9,6 +9,7 @@ public record HistorialUsuarioResponse(
         Float horasSuenoDia,
         Float horasSocialDia,
         Float horasActividadFisica,
-        String comentario
+        Float promedioCalificaciones,
+        String prediccion
 ) {
 }
