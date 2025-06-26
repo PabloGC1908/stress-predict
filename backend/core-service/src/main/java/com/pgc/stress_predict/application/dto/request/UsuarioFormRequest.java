@@ -7,7 +7,7 @@ public record UsuarioFormRequest(
         String apellido,
         Integer dni,
         LocalDate fechaNacimiento,
-        String telefono,
+        Integer telefono,
         String email,
         String contrasenia,
         Float horasEstudioDia,

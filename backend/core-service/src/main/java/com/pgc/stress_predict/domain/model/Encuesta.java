@@ -41,6 +41,9 @@ public class Encuesta {
     @Column(name = "horas_actividad_fisica")
     private Float horasActividadFisica;
 
-    private String comentario;
+    @Column(name = "promedio_calificaciones")
+    private Float promedioCalificaciones;
+
+    private String prediccion;
 
 }

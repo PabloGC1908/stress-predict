@@ -18,7 +18,7 @@ public class UsuarioInfo {
     private Integer id;
     private String nombre;
     private String apellido;
-    private String telefono;
+    private Integer telefono;
 
     @Column(unique = true)
     private Integer dni;
