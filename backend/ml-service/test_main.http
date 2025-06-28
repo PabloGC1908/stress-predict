@@ -10,7 +10,7 @@ Accept: application/json
 
 ###
 
-POST http://localhost:8000/predict
+POST http://localhost:8000//api/ml/predict
 Content-Type: application/json
 
 {
