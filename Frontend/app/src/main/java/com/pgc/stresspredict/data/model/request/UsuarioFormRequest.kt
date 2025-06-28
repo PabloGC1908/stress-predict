@@ -1,4 +1,4 @@
-package com.pgc.stresspredict.data.model
+package com.pgc.stresspredict.data.model.request
 
 data class UsuarioFormRequest(
     val nombre: String,

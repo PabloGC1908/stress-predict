@@ -1,8 +1,10 @@
 package com.pgc.stresspredict
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -18,6 +20,7 @@ import com.pgc.stresspredict.ui.screen.*
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -26,6 +29,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun StressPredictApp() {
     StressPredictTheme {
@@ -46,6 +50,7 @@ fun StressPredictApp() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AppScaffold(
     currentScreen: Screen,
@@ -77,7 +82,8 @@ fun AppScaffold(
                 )
                 Screen.Profile -> ProfileScreen(
                     onNavigateBack = { onScreenChange(Screen.Main) },
-                    onEditProfile = { /* Lógica para editar perfil */ }
+                    onEditProfile = { onScreenChange(Screen.EditProfile) }, // Nueva pantalla
+                    onLogout = { onScreenChange(Screen.Login) }
                 )
                 else -> Unit
             }
@@ -105,6 +111,10 @@ fun AuthScreens(
             stressLevel = "Bajo",
             stressImproved = true
         )
+        Screen.EditProfile -> EditProfileScreen(
+            onNavigateBack = { onScreenChange(Screen.Profile) },
+            viewModel = TODO()
+        )
         else -> Unit
     }
 }
@@ -120,8 +130,10 @@ sealed class Screen(val iconRes: Int, val label: String) {
     data object Login : Screen(0, "")
     data object Register : Screen(0, "")
     data object Results : Screen(0, "")
+    data object EditProfile : Screen(0, "")
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun PreviewMainActivity() {

@@ -63,6 +63,10 @@ dependencies {
     implementation ("androidx.compose.runtime:runtime-livedata:1.5.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
     implementation ("androidx.navigation:navigation-compose:2.7.0")
+    implementation("com.jakewharton.threetenabp:threetenabp:1.4.0")
+    implementation("androidx.compose.material:material-icons-extended:1.5.4") // Para iconos
+    implementation("androidx.compose.ui:ui-tooling-preview:1.5.4") // Para previews
+    debugImplementation("androidx.compose.ui:ui-tooling:1.5.4")
 
     implementation(libs.androidx.compose.material)
     implementation(libs.play.services.dtdi)

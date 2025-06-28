@@ -7,9 +7,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pgc.stresspredict.data.api.ApiService
 import com.pgc.stresspredict.data.RetrofitClient
-import com.pgc.stresspredict.data.model.AuthLoginRequest
-import com.pgc.stresspredict.data.model.AuthResponse
-import com.pgc.stresspredict.data.model.UsuarioFormRequest
+import com.pgc.stresspredict.data.model.request.AuthLoginRequest
+import com.pgc.stresspredict.data.model.response.AuthResponse
+import com.pgc.stresspredict.data.model.request.UsuarioFormRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch

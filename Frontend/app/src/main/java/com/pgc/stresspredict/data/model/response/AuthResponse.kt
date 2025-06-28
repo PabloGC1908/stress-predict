@@ -1,4 +1,4 @@
-package com.pgc.stresspredict.data.model
+package com.pgc.stresspredict.data.model.response
 
 data class AuthResponse(
     val username: String,

@@ -1,4 +1,4 @@
-package com.pgc.stresspredict.data.model
+package com.pgc.stresspredict.data.model.request
 
 // Versión Android del modelo del backend
 data class AuthLoginRequest(
