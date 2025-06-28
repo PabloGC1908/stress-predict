@@ -1,3 +1,5 @@
+from urllib.request import Request
+
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 import joblib
@@ -29,7 +31,11 @@ async def root():
 
 
 @app.post("/api/ml/predict")
-async def predecir_estres(formulario: FormularioInput):
+async def predecir_estres(
+        request: Request,
+        formulario: FormularioInput):
+    token = request.headers.get("authorization")
+
     input_data = [[
         formulario.study_hours_per_day,
         formulario.extracurricular_hours_per_day,
@@ -50,11 +56,13 @@ async def predecir_estres(formulario: FormularioInput):
             "actividad_fisica": formulario.physical_activity_hours_per_day,
             "promedio_calificaciones": formulario.gpa
         },
+        "jwt": token,
         "prediccion": prediccion
     }
 
     # Enviamos a Kafka
     producer.send("predicciones-estres", value=resultado)
+    producer.flush()
 
     if prediccion == "Low":
         return "Bajo estrés"
