@@ -6,6 +6,6 @@ public record EntradaRequest(
         Float horas_sueno,
         Float horas_sociales,
         Float actividad_fisica,
-        Float gpa
+        Float promedio_calificaciones
 ) {
 }
