@@ -1,59 +1,46 @@
 package com.pgc.stresspredict.ui.screen
 
-import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
+import com.pgc.stresspredict.util.showToast
 import com.pgc.stresspredict.viewmodels.ProfileState
 import com.pgc.stresspredict.viewmodels.ProfileViewModel
+import com.pgc.stresspredict.viewmodels.UpdateState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
-    viewModel: ProfileViewModel,
+    viewModel: ProfileViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val profileState by viewModel.profileState.collectAsState()
     val scrollState = rememberScrollState()
+    val profileState by viewModel.profileState.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
 
-    // Estados locales para los campos editables
+    // Form fields
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
     var fechaNacimiento by remember { mutableStateOf("") }
 
-    // Inicializar valores cuando el perfil se carga
+    // Initialize form with profile data
     LaunchedEffect(profileState) {
         if (profileState is ProfileState.Success) {
             val profile = (profileState as ProfileState.Success).profile
@@ -65,90 +52,179 @@ fun EditProfileScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Editar Perfil") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Cancelar")
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            viewModel.updateProfile(
-                                nombre = nombre,
-                                apellido = apellido,
-                                telefono = telefono.toIntOrNull() ?: 0,
-                                dni = dni.toIntOrNull() ?: 0,
-                                fechaNacimiento = fechaNacimiento
-                            )
-                            onNavigateBack()
-                        }
-                    ) {
-                        Icon(Icons.Default.Save, contentDescription = "Guardar")
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
-                label = { Text("Nombres *") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = apellido,
-                onValueChange = { apellido = it },
-                label = { Text("Apellidos *") },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            OutlinedTextField(
-                value = telefono,
-                onValueChange = { if (it.all { c -> c.isDigit() }) telefono = it },
-                label = { Text("Teléfono") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-            )
-
-            OutlinedTextField(
-                value = dni,
-                onValueChange = { if (it.all { c -> c.isDigit() }) dni = it },
-                label = { Text("DNI") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-            )
-
-            OutlinedTextField(
-                value = fechaNacimiento,
-                onValueChange = { fechaNacimiento = it },
-                label = { Text("Fecha de Nacimiento (AAAA-MM-DD)") },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Ej: 1990-05-15") }
-            )
-        }
-    }
-
-    // Manejar errores
-    LaunchedEffect(viewModel) {
-        viewModel.profileState.collect { state ->
-            if (state is ProfileState.Error) {
-                Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+    // Handle states
+    LaunchedEffect(profileState, updateState) {
+        when {
+            profileState is ProfileState.Error -> {
+                context.showToast((profileState as ProfileState.Error).message)
+            }
+            updateState is UpdateState.Error -> {
+                context.showToast((updateState as UpdateState.Error).message)
+            }
+            updateState is UpdateState.Success -> {
+                context.showToast("Perfil actualizado correctamente")
+                onNavigateBack()
             }
         }
     }
+
+    Scaffold(
+        topBar = {
+            EditProfileTopBar(
+                onBack = onNavigateBack,
+                onSave = {
+                    viewModel.updateProfile(
+                        nombre = nombre,
+                        apellido = apellido,
+                        telefono = telefono.toIntOrNull(),
+                        dni = dni.toIntOrNull(),
+                        fechaNacimiento = fechaNacimiento.ifEmpty { null }.toString()
+                    )
+                },
+                isSaving = updateState is UpdateState.Loading
+            )
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            ProfileForm(
+                nombre = nombre,
+                onNombreChange = { nombre = it },
+                apellido = apellido,
+                onApellidoChange = { apellido = it },
+                telefono = telefono,
+                onTelefonoChange = { if (it.all { c -> c.isDigit() }) telefono = it },
+                dni = dni,
+                onDniChange = { if (it.all { c -> c.isDigit() }) dni = it },
+                fechaNacimiento = fechaNacimiento,
+                onFechaNacimientoChange = { fechaNacimiento = it },
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .verticalScroll(scrollState)
+            )
+
+            if (updateState is UpdateState.Loading) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EditProfileTopBar(
+    onBack: () -> Unit,
+    onSave: () -> Unit,
+    isSaving: Boolean = false
+) {
+    CenterAlignedTopAppBar(
+        title = { Text("Editar Perfil") },
+        navigationIcon = {
+            IconButton(
+                onClick = onBack,
+                enabled = !isSaving
+            ) {
+                Icon(Icons.Default.ArrowBack, contentDescription = "Cancelar")
+            }
+        },
+        actions = {
+            IconButton(
+                onClick = onSave,
+                enabled = !isSaving
+            ) {
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Default.Save, contentDescription = "Guardar")
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun ProfileForm(
+    nombre: String,
+    onNombreChange: (String) -> Unit,
+    apellido: String,
+    onApellidoChange: (String) -> Unit,
+    telefono: String,
+    onTelefonoChange: (String) -> Unit,
+    dni: String,
+    onDniChange: (String) -> Unit,
+    fechaNacimiento: String,
+    onFechaNacimientoChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        ProfileTextField(
+            value = nombre,
+            onValueChange = onNombreChange,
+            label = "Nombres",
+            required = true
+        )
+
+        ProfileTextField(
+            value = apellido,
+            onValueChange = onApellidoChange,
+            label = "Apellidos",
+            required = true
+        )
+
+        ProfileTextField(
+            value = telefono,
+            onValueChange = onTelefonoChange,
+            label = "Teléfono",
+            keyboardType = KeyboardType.Phone
+        )
+
+        ProfileTextField(
+            value = dni,
+            onValueChange = onDniChange,
+            label = "DNI",
+            keyboardType = KeyboardType.Number
+        )
+
+        ProfileTextField(
+            value = fechaNacimiento,
+            onValueChange = onFechaNacimientoChange,
+            label = "Fecha de Nacimiento",
+            placeholder = "AAAA-MM-DD"
+        )
+    }
+}
+
+@Composable
+private fun ProfileTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    required: Boolean = false,
+    keyboardType: KeyboardType = KeyboardType.Text,
+    placeholder: String? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text("$label${if (required) " *" else ""}") },
+        modifier = Modifier.fillMaxWidth(),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        placeholder = placeholder?.let { { Text(it) } }
+    )
 }
 
 @Preview
@@ -156,7 +232,6 @@ fun EditProfileScreen(
 fun EditProfileScreenPreview() {
     StressPredictTheme {
         EditProfileScreen(
-            viewModel = viewModel(), // Necesitarás un ViewModel mock para el preview
             onNavigateBack = {}
         )
     }

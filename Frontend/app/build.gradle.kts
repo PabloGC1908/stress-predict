@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("kotlin-kapt")  // Necesario para Hilt
+    id("com.google.dagger.hilt.android")  // Plugin de Hilt
 }
 
 android {
@@ -10,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.pgc.stresspredict"
-        minSdk = 25
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -67,6 +69,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.5.4") // Para iconos
     implementation("androidx.compose.ui:ui-tooling-preview:1.5.4") // Para previews
     debugImplementation("androidx.compose.ui:ui-tooling:1.5.4")
+    implementation ("com.google.dagger:hilt-android:2.48")
+    kapt ("com.google.dagger:hilt-compiler:2.48")
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
     implementation(libs.androidx.compose.material)
     implementation(libs.play.services.dtdi)

@@ -4,30 +4,41 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.pgc.stresspredict.data.model.response.PerfilUsuarioResponse
 import com.pgc.stresspredict.data.repository.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-open class ProfileViewModel(
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) : ViewModel() {
 
-    internal val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
-    val profileState: StateFlow<ProfileState> = _profileState
+    private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Loading)
+    val profileState: StateFlow<ProfileState> = _profileState.asStateFlow()
 
-    internal val _email = MutableStateFlow("")
-    val email: StateFlow<String> = _email
+    private val _email = MutableStateFlow("")
+    val email: StateFlow<String> = _email.asStateFlow()
+
+    private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
+    val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
     init {
-        loadProfile()
+        loadInitialData()
+    }
+
+    private fun loadInitialData() {
         loadEmail()
+        loadProfile()
     }
 
     private fun loadEmail() {
         _email.value = userRepository.getCurrentEmail() ?: ""
     }
 
-    open fun loadProfile() {
+    fun loadProfile() {
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
             try {
@@ -37,6 +48,10 @@ open class ProfileViewModel(
                 _profileState.value = ProfileState.Error(
                     message = e.message ?: "Error al cargar el perfil"
                 )
+                // Si es error de autenticación, podrías limpiar el estado aquí
+                if (e.message?.contains("autenticado", ignoreCase = true) == true) {
+                    logout()
+                }
             }
         }
     }
@@ -44,11 +59,12 @@ open class ProfileViewModel(
     fun updateProfile(
         nombre: String,
         apellido: String,
-        telefono: Int,
-        dni: Int,
+        telefono: Int?,
+        dni: Int?,
         fechaNacimiento: String
     ) {
         viewModelScope.launch {
+            _updateState.value = UpdateState.Loading
             try {
                 val success = userRepository.updateUserProfile(
                     nombre = nombre,
@@ -58,11 +74,14 @@ open class ProfileViewModel(
                     fechaNacimiento = fechaNacimiento
                 )
 
-                if (success) {
+                _updateState.value = if (success) {
                     loadProfile() // Recargar los datos actualizados
+                    UpdateState.Success
+                } else {
+                    UpdateState.Error("Error desconocido al actualizar")
                 }
             } catch (e: Exception) {
-                _profileState.value = ProfileState.Error(
+                _updateState.value = UpdateState.Error(
                     message = "Error al actualizar: ${e.message}"
                 )
             }
@@ -72,13 +91,23 @@ open class ProfileViewModel(
     fun logout() {
         viewModelScope.launch {
             userRepository.logout()
+            // Resetear estados después del logout
+            _profileState.value = ProfileState.Loading
+            _email.value = ""
+            _updateState.value = UpdateState.Idle
         }
     }
-
 }
 
 sealed class ProfileState {
     object Loading : ProfileState()
     data class Success(val profile: PerfilUsuarioResponse) : ProfileState()
     data class Error(val message: String) : ProfileState()
+}
+
+sealed class UpdateState {
+    object Idle : UpdateState()
+    object Loading : UpdateState()
+    object Success : UpdateState()
+    data class Error(val message: String) : UpdateState()
 }

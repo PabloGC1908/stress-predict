@@ -1,28 +1,34 @@
 package com.pgc.stresspredict.data.repository
 
-import android.content.Context
 import com.pgc.stresspredict.data.model.request.PerfilUsuarioUpdateRequest
 import com.pgc.stresspredict.data.model.response.PerfilUsuarioResponse
 import com.pgc.stresspredict.data.api.ApiService
 import com.pgc.stresspredict.data.auth.SessionManager
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class UserRepository(
+@Singleton
+class UserRepository @Inject constructor(
     private val apiService: ApiService,
-    private val context: Context
+    private val sessionManager: SessionManager
 ) {
-    private val sessionManager by lazy { SessionManager(context) }
 
     suspend fun getUserProfile(): PerfilUsuarioResponse {
-        val token = sessionManager.getAuthToken()
-            ?: throw Exception("Usuario no autenticado")
-        return apiService.getPerfil("Bearer $token")
+        return try {
+            apiService.getPerfil(sessionManager.getAuthHeader())
+        } catch (e: retrofit2.HttpException) {
+            if (e.code() == 401) {
+                sessionManager.logout()  // Limpia sesión si el token falla
+            }
+            throw Exception("Error de autenticación: ${e.message()}")
+        }
     }
 
     suspend fun updateUserProfile(
         nombre: String,
         apellido: String,
-        telefono: Int,
-        dni: Int,
+        telefono: Int?,
+        dni: Int?,
         fechaNacimiento: String
     ): Boolean {
         return try {
@@ -51,6 +57,4 @@ class UserRepository(
     fun getCurrentEmail(): String? {
         return sessionManager.getUserEmail()
     }
-
-    companion object
 }

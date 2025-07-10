@@ -1,8 +1,5 @@
 package com.pgc.stresspredict.ui.screen
 
-import android.os.Build
-import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,40 +18,54 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.pgc.stresspredict.R
 import com.pgc.stresspredict.data.model.response.PerfilUsuarioResponse
-import com.pgc.stresspredict.data.repository.UserRepository
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
+import com.pgc.stresspredict.util.showToast
 import com.pgc.stresspredict.viewmodels.ProfileState
 import com.pgc.stresspredict.viewmodels.ProfileViewModel
+import com.pgc.stresspredict.viewmodels.UpdateState
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = viewModel(),
+    viewModel: ProfileViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
     onEditProfile: () -> Unit,
     onLogout: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
     val profileState by viewModel.profileState.collectAsState()
     val email by viewModel.email.collectAsState()
+    val updateState by viewModel.updateState.collectAsState()
 
-    // Manejar estados de error
-    LaunchedEffect(profileState) {
-        if (profileState is ProfileState.Error) {
-            val error = (profileState as ProfileState.Error).message
-            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+    // Handle states changes
+    LaunchedEffect(profileState, updateState) {
+        when {
+            profileState is ProfileState.Error -> {
+                context.showToast((profileState as ProfileState.Error).message)
+            }
+            updateState is UpdateState.Error -> {
+                context.showToast((updateState as UpdateState.Error).message)
+            }
+            updateState is UpdateState.Success -> {
+                context.showToast("Perfil actualizado correctamente")
+                viewModel.loadProfile() // Recargar datos
+            }
         }
+    }
+
+    // Load profile on first composition
+    LaunchedEffect(Unit) {
+        viewModel.loadProfile()
     }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Perfil de Usuario") },
+                title = { Text("Mi Perfil") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -64,146 +74,169 @@ fun ProfileScreen(
                 actions = {
                     IconButton(
                         onClick = onEditProfile,
-                        enabled = profileState !is ProfileState.Loading
+                        enabled = profileState !is ProfileState.Loading &&
+                                updateState !is UpdateState.Loading
                     ) {
-                        Icon(Icons.Default.Edit, contentDescription = "Editar perfil")
+                        Icon(Icons.Default.Edit, contentDescription = "Editar")
                     }
                 }
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
             when (profileState) {
-                is ProfileState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                ProfileState.Loading -> LoadingProfile()
+                is ProfileState.Error -> ErrorProfile(
+                    errorState = profileState as ProfileState.Error,
+                    onRetry = { viewModel.loadProfile() }
+                )
+                is ProfileState.Success -> ProfileContent(
+                    profile = (profileState as ProfileState.Success).profile,
+                    email = email,
+                    onLogout = {
+                        viewModel.logout()
+                        onLogout()
+                    },
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .verticalScroll(scrollState)
+                )
+            }
+
+            // Show loading overlay during update
+            if (updateState is UpdateState.Loading) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
                         CircularProgressIndicator()
                     }
                 }
-                is ProfileState.Error -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Error al cargar el perfil",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadProfile() }) {
-                            Text("Reintentar")
-                        }
-                    }
-                }
-                is ProfileState.Success -> {
-                    val profile = (profileState as ProfileState.Success).profile
-
-                    // Foto de perfil
-                    Image(
-                        painter = painterResource(id = R.drawable.profile_placeholder),
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(MaterialTheme.shapes.extraLarge),
-                        contentScale = ContentScale.Crop
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Información del usuario
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "${profile.nombre} ${profile.apellido}",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = email,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Sección de información
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            ProfileInfoItem(
-                                title = "Teléfono",
-                                value = profile.telefono.toString()
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                            )
-                            ProfileInfoItem(
-                                title = "DNI",
-                                value = profile.dni.toString()
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                            )
-                            ProfileInfoItem(
-                                title = "Fecha Nacimiento",
-                                value = profile.fechaNacimiento.toString()
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 8.dp),
-                                thickness = 1.dp,
-                                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                            )
-                            ProfileInfoItem(
-                                title = "Edad",
-                                value = "${profile.calcularEdad()} años"
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Botón de cerrar sesión
-                    Button(
-                        onClick = {
-                            viewModel.logout()
-                            onLogout()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    ) {
-                        Text("Cerrar sesión")
-                    }
-                }
             }
+        }
+    }
+}
+
+@Composable
+private fun LoadingProfile() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ErrorProfile(
+    errorState: ProfileState.Error,
+    onRetry: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Error al cargar el perfil",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = errorState.message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = onRetry) {
+            Text("Reintentar")
+        }
+    }
+}
+
+@Composable
+private fun ProfileContent(
+    profile: PerfilUsuarioResponse,
+    email: String,
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Profile Picture
+        Image(
+            painter = painterResource(id = R.drawable.profile_placeholder),
+            contentDescription = "Foto de perfil",
+            modifier = Modifier
+                .size(120.dp)
+                .clip(MaterialTheme.shapes.extraLarge),
+            contentScale = ContentScale.Crop
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // User Info
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "${profile.nombre} ${profile.apellido}",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = email,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Info Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                ProfileInfoItem("Teléfono", profile.telefono.toString())
+                ProfileDivider()
+                ProfileInfoItem("DNI", profile.dni.toString())
+                ProfileDivider()
+                ProfileInfoItem("Fecha Nacimiento", profile.fechaNacimiento)
+                ProfileDivider()
+                ProfileInfoItem("Edad", "${profile.calcularEdad()} años")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Logout Button
+        Button(
+            onClick = onLogout,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
+            )
+        ) {
+            Text("Cerrar sesión")
         }
     }
 }
@@ -227,40 +260,23 @@ private fun ProfileInfoItem(title: String, value: String) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+private fun ProfileDivider() {
+    Divider(
+        modifier = Modifier.padding(vertical = 8.dp),
+        thickness = 1.dp,
+        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ProfileScreenPreview() {
     StressPredictTheme {
         ProfileScreen(
-            viewModel = object : ProfileViewModel(UserRepository.mock()) {
-                override fun loadProfile() {
-                    _profileState.value = ProfileState.Success(
-                        PerfilUsuarioResponse(
-                            nombre = "Ana",
-                            apellido = "Gómez",
-                            telefono = 987654321,
-                            dni = 87654321,
-                            fechaNacimiento = "1995-05-15",
-                            promedioHorasEstudioDia = 4.5f,
-                            promedioHorasExtracurricularDia = TODO(),
-                            promedioHorasSuenoDia = TODO(),
-                            promedioHorasSocialDia = TODO(),
-                            promedioHorasActividadFisica = TODO(),
-                            promedioCalificaciones = TODO(),
-                            // ... otros campos
-                        )
-                    )
-                    _email.value = "ana@ejemplo.com"
-                }
-            },
             onNavigateBack = {},
             onEditProfile = {},
             onLogout = {}
         )
     }
-}
-
-fun UserRepository.Companion.mock(): UserRepository {
-    return TODO("Provide the return value")
 }
