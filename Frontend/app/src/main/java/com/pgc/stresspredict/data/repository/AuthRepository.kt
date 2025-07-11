@@ -5,6 +5,7 @@ import com.pgc.stresspredict.data.auth.SessionManager
 import com.pgc.stresspredict.data.model.request.AuthLoginRequest
 import com.pgc.stresspredict.data.model.request.UsuarioFormRequest
 import com.pgc.stresspredict.data.model.response.AuthResponse
+import com.pgc.stresspredict.di.MainApiService
 import com.pgc.stresspredict.util.NetworkResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,7 +15,7 @@ import javax.inject.Singleton
 
 @Singleton
 class AuthRepository @Inject constructor(
-    private val apiService: ApiService,
+    @MainApiService private val apiService: ApiService,
     private val sessionManager: SessionManager
 ) {
     suspend fun registerUser(

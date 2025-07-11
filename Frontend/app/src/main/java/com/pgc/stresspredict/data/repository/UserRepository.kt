@@ -4,12 +4,13 @@ import com.pgc.stresspredict.data.model.request.PerfilUsuarioUpdateRequest
 import com.pgc.stresspredict.data.model.response.PerfilUsuarioResponse
 import com.pgc.stresspredict.data.api.ApiService
 import com.pgc.stresspredict.data.auth.SessionManager
+import com.pgc.stresspredict.di.MainApiService
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class UserRepository @Inject constructor(
-    private val apiService: ApiService,
+    @MainApiService private val apiService: ApiService,
     private val sessionManager: SessionManager
 ) {
 
