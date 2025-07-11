@@ -7,168 +7,150 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.pgc.stresspredict.Screen
-import com.pgc.stresspredict.ui.theme.StressPredictTheme
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.pgc.stresspredict.util.showToast
+import com.pgc.stresspredict.viewmodels.PredictionState
+import com.pgc.stresspredict.viewmodels.StressFormField
+import com.pgc.stresspredict.viewmodels.StressViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurveyScreen(
-    onNavigate: (Screen) -> Unit = {},
-    onNavigateBack: () -> Unit = {},
-    onSubmitSurvey: (EncuestaRequest) -> Unit = {}
+    viewModel: StressViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit,
+    onNavigateToResults: () -> Unit
 ) {
-    // State for time inputs
-    val (studyHours, setStudyHours) = remember { mutableStateOf("") }
-    val (extracurricularHours, setExtracurricularHours) = remember { mutableStateOf("") }
-    val (sleepHours, setSleepHours) = remember { mutableStateOf("") }
-    val (socialHours, setSocialHours) = remember { mutableStateOf("") }
-    val (exerciseHours, setExerciseHours) = remember { mutableStateOf("") }
-    val (comment, setComment) = remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val formState by viewModel.formData.collectAsState()
+    val predictionState by viewModel.predictionState.collectAsState()
+    val formValidation by viewModel.formValidation.collectAsState()
+
+    // Manejador de estados de predicción
+    LaunchedEffect(predictionState) {
+        when (predictionState) {
+            is PredictionState.Success -> {
+                context.showToast("Predicción completada")
+                onNavigateToResults()
+            }
+            is PredictionState.Error -> {
+                val error = (predictionState as PredictionState.Error).message
+                context.showToast("Error: $error")
+            }
+            else -> {}
+        }
+    }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Encuesta") },
+                title = { Text("Encuesta de Estrés") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 }
             )
-        },
+        }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(16.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFE3F2FD)
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "Por favor, responde las preguntas:",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF0D47A1)
-                        )
+            // Campos del formulario con validación
+            NumberInputField(
+                value = formState.horasEstudio.toString(),
+                onValueChange = { viewModel.updateFormField(StressFormField.STUDY_HOURS, it) },
+                label = "Horas de estudio",
+                isError = formValidation[StressFormField.STUDY_HOURS] == false,
+                errorMessage = "Debe ser mayor a 0",
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                        // Question 1
-                        TimeQuestion(
-                            question = "1. ¿Cuántas horas estudiaste el dia de hoy?",
-                            value = studyHours,
-                            onValueChange = setStudyHours
-                        )
+            NumberInputField(
+                value = formState.horasExtracurriculares.toString(),
+                onValueChange = { viewModel.updateFormField(StressFormField.EXTRACURRICULAR_HOURS, it) },
+                label = "Horas extracurriculares",
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                        // Question 2
-                        TimeQuestion(
-                            question = "2. ¿Cuántas horas dedicaste a actividades extracurriculares?",
-                            value = extracurricularHours,
-                            onValueChange = setExtracurricularHours
-                        )
+            NumberInputField(
+                value = formState.horasSueno.toString(),
+                onValueChange = { viewModel.updateFormField(StressFormField.SLEEP_HOURS, it) },
+                label = "Horas de sueño",
+                isError = formValidation[StressFormField.SLEEP_HOURS] == false,
+                errorMessage = "Debe ser mayor a 0",
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                        // Question 3
-                        TimeQuestion(
-                            question = "3. ¿Cuántas horas dormiste?",
-                            value = sleepHours,
-                            onValueChange = setSleepHours
-                        )
+            NumberInputField(
+                value = formState.horasSociales.toString(),
+                onValueChange = { viewModel.updateFormField(StressFormField.SOCIAL_HOURS, it) },
+                label = "Horas sociales",
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                        // Question 4
-                        TimeQuestion(
-                            question = "4. ¿Cuántas horas dedicaste a socializar?",
-                            value = socialHours,
-                            onValueChange = setSocialHours
-                        )
+            NumberInputField(
+                value = formState.horasActividadFisica.toString(),
+                onValueChange = { viewModel.updateFormField(StressFormField.PHYSICAL_ACTIVITY, it) },
+                label = "Horas de actividad física",
+                modifier = Modifier.fillMaxWidth()
+            )
 
-                        // Question 5
-                        TimeQuestion(
-                            question = "5. ¿Cuántas horas dedicaste a alguna actividad física?",
-                            value = exerciseHours,
-                            onValueChange = setExerciseHours
-                        )
+            NumberInputField(
+                value = formState.promedioCalificaciones.toString(),
+                onValueChange = { viewModel.updateFormField(StressFormField.GPA, it) },
+                label = "Promedio de calificaciones",
+                isError = formValidation[StressFormField.GPA] == false,
+                errorMessage = "Debe ser entre 0 y 20",
+                modifier = Modifier.fillMaxWidth(),
+                isGPA = true
+            )
 
-                        // Comment field
-                        Text(
-                                text = "6. Comentario (opcional)",
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                        OutlinedTextField(
-                            value = comment,
-                            onValueChange = setComment,
-                            label = { Text("Escribe aquí tus comentarios") },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 3
-                        )
+            Spacer(modifier = Modifier.height(24.dp))
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Button(
-                            onClick = {
-                                onSubmitSurvey(
-                                    EncuestaRequest(
-                                        idUsuario = 1, // Should come from user session
-                                        horasEstudioDia = studyHours.toFloatOrNull() ?: 0f,
-                                        horasExtracurricularDia = extracurricularHours.toFloatOrNull() ?: 0f,
-                                        horasSuenoDia = sleepHours.toFloatOrNull() ?: 0f,
-                                        horasSocialDia = socialHours.toFloatOrNull() ?: 0f,
-                                        horasActividadFisica = exerciseHours.toFloatOrNull() ?: 0f,
-                                        comentario = comment
-                                    )
-                                )
-                                onNavigate(Screen.Results)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF0D47A1),
-                                contentColor = Color.White
-                            ),
-                            enabled = studyHours.isNotEmpty() &&
-                                    extracurricularHours.isNotEmpty() &&
-                                    sleepHours.isNotEmpty() &&
-                                    socialHours.isNotEmpty() &&
-                                    exerciseHours.isNotEmpty()
-                        ) {
-                            Text("Enviar Registro")
-                        }
-                    }
+            // Botón de envío
+            Button(
+                onClick = { viewModel.predictStress() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                enabled = viewModel.isFormValid() && predictionState !is PredictionState.Loading
+            ) {
+                if (predictionState is PredictionState.Loading) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                        modifier = Modifier.size(20.dp))
+                } else {
+                    Text("Calcular Nivel de Estrés")
                 }
             }
         }
@@ -176,51 +158,38 @@ fun SurveyScreen(
 }
 
 @Composable
-fun TimeQuestion(
-    question: String,
+private fun NumberInputField(
     value: String,
-    onValueChange: (String) -> Unit
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    errorMessage: String? = null,
+    isGPA: Boolean = false
 ) {
-    Column {
-        Text(
-            text = question,
-            fontSize = 16.sp,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+    Column(modifier = modifier) {
         OutlinedTextField(
             value = value,
             onValueChange = { newValue ->
-                if (newValue.isEmpty() || newValue.toFloatOrNull() != null) {
+                if (newValue.isEmpty() || newValue.matches(Regex("^\\d*\\.?\\d*\$"))) {
                     onValueChange(newValue)
                 }
             },
-            label = { Text("Horas") },
+            label = { Text(label) },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
-            suffix = { Text(text = "horas") }
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = isError,
+            suffix = { Text(if (isGPA) "puntos" else "horas") }
         )
-    }
-}
 
-data class EncuestaRequest(
-    val idUsuario: Int,
-    val horasEstudioDia: Float,
-    val horasExtracurricularDia: Float,
-    val horasSuenoDia: Float,
-    val horasSocialDia: Float,
-    val horasActividadFisica: Float,
-    val comentario: String
-)
-
-@Preview(showBackground = true)
-@Composable
-fun SurveyScreenPreview() {
-    StressPredictTheme {
-        SurveyScreen(
-            onNavigate = {},
-            onNavigateBack = {},
-            onSubmitSurvey = {}
-        )
+        if (isError && !errorMessage.isNullOrEmpty()) {
+            Text(
+                text = errorMessage,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
+        }
     }
 }

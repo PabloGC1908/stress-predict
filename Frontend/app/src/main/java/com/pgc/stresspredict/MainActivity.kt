@@ -7,42 +7,64 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.rememberNavController
 import com.pgc.stresspredict.ui.component.navigation.BottomNavigationBar
 import com.pgc.stresspredict.ui.screen.*
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
+import com.pgc.stresspredict.viewmodels.AuthViewModel
+import com.pgc.stresspredict.viewmodels.StressViewModel
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            StressPredictApp()
+            StressPredictTheme {
+                AppNavigation()
+            }
         }
     }
 }
 
 @Composable
-fun StressPredictApp() {
-    StressPredictTheme {
-        var currentScreen by remember { mutableStateOf<Screen>(Screen.Login) }
-        val screensWithNavBar = listOf(
-            Screen.Survey,
-            Screen.History,
-            Screen.Main,
-            Screen.Recommendations,
-            Screen.Profile
-        )
+fun AppNavigation() {
+    rememberNavController()
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Login) }
+    val screensWithNavBar = listOf(
+        Screen.Survey,
+        Screen.History,
+        Screen.Main,
+        Screen.Recommendations,
+        Screen.Profile
+    )
 
-        if (currentScreen in screensWithNavBar) {
-            AppScaffold(currentScreen = currentScreen, onScreenChange = { currentScreen = it })
-        } else {
-            AuthScreens(currentScreen = currentScreen, onScreenChange = { currentScreen = it })
+    // Auto-login check
+    val authViewModel: AuthViewModel = hiltViewModel()
+    LaunchedEffect(Unit) {
+        if (authViewModel.isLoggedIn()) {
+            currentScreen = Screen.Main
         }
+    }
+
+    if (currentScreen in screensWithNavBar) {
+        AppScaffold(
+            currentScreen = currentScreen,
+            onScreenChange = { currentScreen = it }
+        )
+    } else {
+        AuthScreens(
+            currentScreen = currentScreen,
+            onScreenChange = { currentScreen = it }
+        )
     }
 }
 
@@ -62,9 +84,8 @@ fun AppScaffold(
         Box(modifier = Modifier.padding(innerPadding)) {
             when (currentScreen) {
                 Screen.Survey -> SurveyScreen(
-                    onNavigate = { newScreen -> onScreenChange(newScreen) },
                     onNavigateBack = { onScreenChange(Screen.Main) },
-                    onSubmitSurvey = { /* Lógica para enviar encuesta */ }
+                    onNavigateToResults = { onScreenChange(Screen.Results) }
                 )
                 Screen.History -> HistoryScreen(
                     onNavigateBack = { onScreenChange(Screen.Main) }
@@ -77,7 +98,8 @@ fun AppScaffold(
                 )
                 Screen.Profile -> ProfileScreen(
                     onNavigateBack = { onScreenChange(Screen.Main) },
-                    onEditProfile = { /* Lógica para editar perfil */ }
+                    onEditProfile = { onScreenChange(Screen.EditProfile) },
+                    onLogout = { onScreenChange(Screen.Login) }
                 )
                 else -> Unit
             }
@@ -99,33 +121,38 @@ fun AuthScreens(
             onRegisterSuccess = { onScreenChange(Screen.Profile) },
             onNavigateToLogin = { onScreenChange(Screen.Login) }
         )
-        Screen.Results -> ResultsScreen(
-            onNavigateBack = { onScreenChange(Screen.Survey) },
-            onNavigateToHome = { onScreenChange(Screen.Main) },
-            stressLevel = "Bajo",
-            stressImproved = true
+        Screen.Results -> {
+            val stressViewModel: StressViewModel = hiltViewModel()
+            ResultsScreen(
+                viewModel = stressViewModel,
+                onNavigateBack = { onScreenChange(Screen.Survey) },
+                onNavigateToHome = { onScreenChange(Screen.Main) }
+            )
+        }
+        Screen.EditProfile -> EditProfileScreen(
+            onNavigateBack = { onScreenChange(Screen.Profile) }
         )
         else -> Unit
     }
 }
 
 sealed class Screen(val iconRes: Int, val label: String) {
-    data object Survey : Screen(R.drawable.ic_survey, "Encuesta")
-    data object History : Screen(R.drawable.ic_history, "Historial")
-    data object Main : Screen(R.drawable.ic_home, "Principal")
-    data object Recommendations : Screen(R.drawable.ic_recommendations, "Recomendaciones")
-    data object Profile : Screen(R.drawable.ic_profile, "Perfil")
+    object Survey : Screen(R.drawable.ic_survey, "Encuesta")
+    object History : Screen(R.drawable.ic_history, "Historial")
+    object Main : Screen(R.drawable.ic_home, "Principal")
+    object Recommendations : Screen(R.drawable.ic_recommendations, "Recomendaciones")
+    object Profile : Screen(R.drawable.ic_profile, "Perfil")
 
-    // Pantallas sin barra de navegación
-    data object Login : Screen(0, "")
-    data object Register : Screen(0, "")
-    data object Results : Screen(0, "")
+    object Login : Screen(0, "")
+    object Register : Screen(0, "")
+    object Results : Screen(0, "")
+    object EditProfile : Screen(0, "")
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PreviewMainActivity() {
     StressPredictTheme {
-        StressPredictApp()
+        AppNavigation()
     }
 }
