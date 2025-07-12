@@ -42,6 +42,8 @@ annotation class MLApiService
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    const val URL = "https://f7e25dc80996.ngrok-free.app/"
+
     @Provides
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
@@ -99,7 +101,7 @@ object NetworkModule {
         @Named("MainClient") client: OkHttpClient // Usa el cliente correcto
     ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("http://192.168.18.7:8081/")
+            .baseUrl(URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create(
                 GsonBuilder()
@@ -118,7 +120,7 @@ object NetworkModule {
     ): Retrofit {
 
         return Retrofit.Builder()
-            .baseUrl("http://192.168.18.7:8000/")
+            .baseUrl(URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

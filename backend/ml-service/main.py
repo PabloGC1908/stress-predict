@@ -54,15 +54,30 @@ async def predecir_estres(
         "High": "Alto estrés"
     }[prediccion]
 
+    resultado = {
+        "entrada": {
+            "horas_estudio": formulario.study_hours_per_day,
+            "horas_extracurriculares": formulario.extracurricular_hours_per_day,
+            "horas_sueno": formulario.sleep_hours_per_day,
+            "horas_sociales": formulario.social_hours_per_day,
+            "actividad_fisica": formulario.physical_activity_hours_per_day,
+            "promedio_calificaciones": formulario.gpa
+        },
+        "jwt": token,
+        "prediccion": prediccion
+    }
+
+    # Enviamos a Kafka
+    producer.send("predicciones-estres", value=resultado)
+    producer.flush()
+
     # Retorna un objeto JSON estructurado
     return {
         "nivelEstres": nivel_estres,
         "mensaje": mensaje,
     }
 
-    # Enviamos a Kafka
-    #producer.send("predicciones-estres", value=resultado)
-    #producer.flush()
+
 
   
 
