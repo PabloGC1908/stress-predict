@@ -44,6 +44,11 @@ fun SurveyScreen(
     onNavigateBack: () -> Unit,
     onNavigateToResults: () -> Unit
 ) {
+    // Resetear todo al entrar a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.resetAll()
+    }
+
     val context = LocalContext.current
     val formState by viewModel.formData.collectAsState()
     val predictionState by viewModel.predictionState.collectAsState()

@@ -29,6 +29,13 @@ fun ResultsScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToHome: () -> Unit = {}
 ) {
+    // Resetear al salir de la pantalla
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.resetAll()
+        }
+    }
+
     val predictionState by viewModel.predictionState.collectAsState()
     var isLoading by remember { mutableStateOf(true) }
     var showResults by remember { mutableStateOf(false) }

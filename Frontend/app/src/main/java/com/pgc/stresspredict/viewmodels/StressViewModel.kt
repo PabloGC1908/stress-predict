@@ -26,6 +26,17 @@ class StressViewModel @Inject constructor(
     private val _formValidation = MutableStateFlow<Map<StressFormField, Boolean>>(emptyMap())
     val formValidation: StateFlow<Map<StressFormField, Boolean>> = _formValidation.asStateFlow()
 
+    // Datos iniciales para el reset
+    private val initialFormState = FormularioEstresRequest(
+        horasEstudio = 0.0,
+        horasExtracurriculares = 0.0,
+        horasSueno = 0.0,
+        horasSociales = 0.0,
+        horasActividadFisica = 0.0,
+        promedioCalificaciones = 0.0
+    )
+
+
     // Datos del formulario
     private val _formData = MutableStateFlow(
         FormularioEstresRequest(
@@ -166,8 +177,11 @@ class StressViewModel @Inject constructor(
         }
     }
 
-    fun resetState() {
+    // Función para resetear completamente
+    fun resetAll() {
         _predictionState.value = PredictionState.Idle
+        _formData.value = initialFormState
+        _formValidation.value = emptyMap()
     }
 }
 
