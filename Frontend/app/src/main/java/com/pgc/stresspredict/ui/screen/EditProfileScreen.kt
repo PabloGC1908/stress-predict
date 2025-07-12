@@ -18,9 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.pgc.stresspredict.ui.theme.StressPredictTheme
 import com.pgc.stresspredict.util.showToast
-import com.pgc.stresspredict.viewmodels.ProfileState
+import com.pgc.stresspredict.viewmodels.ProfileUiState
 import com.pgc.stresspredict.viewmodels.ProfileViewModel
-import com.pgc.stresspredict.viewmodels.UpdateState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,87 +29,169 @@ fun EditProfileScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val profileState by viewModel.profileState.collectAsState()
-    val updateState by viewModel.updateState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Form fields
+    // Form fields with better state management
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
     var dni by remember { mutableStateOf("") }
     var fechaNacimiento by remember { mutableStateOf("") }
+    var formErrors by remember { mutableStateOf(emptyMap<String, String>()) }
 
     // Initialize form with profile data
-    LaunchedEffect(profileState) {
-        if (profileState is ProfileState.Success) {
-            val profile = (profileState as ProfileState.Success).profile
-            nombre = profile.nombre
-            apellido = profile.apellido
-            telefono = profile.telefono.toString()
-            dni = profile.dni.toString()
-            fechaNacimiento = profile.fechaNacimiento
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is ProfileUiState.Success -> {
+                state.profile.let { profile ->
+                    nombre = profile.nombre ?: ""
+                    apellido = profile.apellido ?: ""
+                    telefono = profile.telefono?.toString() ?: ""
+                    dni = profile.dni?.toString() ?: ""
+                    fechaNacimiento = profile.fechaNacimiento ?: ""
+                }
+            }
+            is ProfileUiState.Error -> {
+                if (state.shouldLogout) {
+                    context.showToast("Sesión expirada")
+                    viewModel.logout(silent = true)
+                } else {
+                    context.showToast(state.message)
+                }
+            }
+            else -> {}
         }
     }
 
-    // Handle states
-    LaunchedEffect(profileState, updateState) {
-        when {
-            profileState is ProfileState.Error -> {
-                context.showToast((profileState as ProfileState.Error).message)
+    // Handle update states
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is ProfileUiState.Success -> {
+                state.updateError?.let {
+                    context.showToast(it)
+                    formErrors = parseUpdateErrors(it)
+                }
             }
-            updateState is UpdateState.Error -> {
-                context.showToast((updateState as UpdateState.Error).message)
-            }
-            updateState is UpdateState.Success -> {
-                context.showToast("Perfil actualizado correctamente")
-                onNavigateBack()
-            }
+            else -> {}
         }
     }
 
     Scaffold(
         topBar = {
             EditProfileTopBar(
-                onBack = onNavigateBack,
-                onSave = {
-                    viewModel.updateProfile(
-                        nombre = nombre,
-                        apellido = apellido,
-                        telefono = telefono.toIntOrNull(),
-                        dni = dni.toIntOrNull(),
-                        fechaNacimiento = fechaNacimiento.ifEmpty { null }.toString()
-                    )
+                onBack = {
+                    if (uiState !is ProfileUiState.Success || !(uiState as ProfileUiState.Success).isUpdating) {
+                        onNavigateBack()
+                    }
                 },
-                isSaving = updateState is UpdateState.Loading
+                onSave = {
+                    if (validateForm(nombre, apellido, telefono, dni, fechaNacimiento)) {
+                        viewModel.updateProfile(
+                            nombre = nombre.trim(),
+                            apellido = apellido.trim(),
+                            telefono = telefono.toIntOrNull(),
+                            dni = dni.toIntOrNull(),
+                            fechaNacimiento = fechaNacimiento.ifEmpty { null }.toString()
+                        )
+                    }
+                },
+                isSaving = uiState is ProfileUiState.Success && (uiState as ProfileUiState.Success).isUpdating
             )
         }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            ProfileForm(
-                nombre = nombre,
-                onNombreChange = { nombre = it },
-                apellido = apellido,
-                onApellidoChange = { apellido = it },
-                telefono = telefono,
-                onTelefonoChange = { if (it.all { c -> c.isDigit() }) telefono = it },
-                dni = dni,
-                onDniChange = { if (it.all { c -> c.isDigit() }) dni = it },
-                fechaNacimiento = fechaNacimiento,
-                onFechaNacimientoChange = { fechaNacimiento = it },
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .verticalScroll(scrollState)
-            )
-
-            if (updateState is UpdateState.Loading) {
-                Surface(
-                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                    modifier = Modifier.fillMaxSize()
+        when (val state = uiState) {
+            ProfileUiState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                    CircularProgressIndicator()
+                }
+            }
+            is ProfileUiState.Error -> {
+                ErrorEditProfile(
+                    errorState = state,
+                    onRetry = { viewModel.loadProfile() },
+                    onBack = onNavigateBack
+                )
+            }
+            is ProfileUiState.Success -> {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    ProfileForm(
+                        nombre = nombre,
+                        onNombreChange = { nombre = it; formErrors = formErrors - "nombre" },
+                        apellido = apellido,
+                        onApellidoChange = { apellido = it; formErrors = formErrors - "apellido" },
+                        telefono = telefono,
+                        onTelefonoChange = { if (it.all { c -> c.isDigit() }) telefono = it; formErrors = formErrors - "telefono" },
+                        dni = dni,
+                        onDniChange = { if (it.all { c -> c.isDigit() }) dni = it; formErrors = formErrors - "dni" },
+                        fechaNacimiento = fechaNacimiento,
+                        onFechaNacimientoChange = { fechaNacimiento = it; formErrors = formErrors - "fechaNacimiento" },
+                        errors = formErrors,
+                        modifier = Modifier
+                            .padding(innerPadding)
+                            .verticalScroll(scrollState)
+                    )
+
+                    if (state.isUpdating) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
                     }
                 }
+            }
+            ProfileUiState.LoggedOut -> {
+                LaunchedEffect(Unit) { onNavigateBack() }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ErrorEditProfile(
+    errorState: ProfileUiState.Error,
+    onRetry: () -> Unit,
+    onBack: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Error al cargar el perfil",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.error
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = errorState.message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Button(onClick = onRetry) {
+                Text("Reintentar")
+            }
+            Button(
+                onClick = onBack,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            ) {
+                Text("Volver")
             }
         }
     }
@@ -163,6 +244,7 @@ private fun ProfileForm(
     onDniChange: (String) -> Unit,
     fechaNacimiento: String,
     onFechaNacimientoChange: (String) -> Unit,
+    errors: Map<String, String>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -175,35 +257,45 @@ private fun ProfileForm(
             value = nombre,
             onValueChange = onNombreChange,
             label = "Nombres",
-            required = true
+            required = true,
+            isError = errors.containsKey("nombre"),
+            errorMessage = errors["nombre"]
         )
 
         ProfileTextField(
             value = apellido,
             onValueChange = onApellidoChange,
             label = "Apellidos",
-            required = true
+            required = true,
+            isError = errors.containsKey("apellido"),
+            errorMessage = errors["apellido"]
         )
 
         ProfileTextField(
             value = telefono,
             onValueChange = onTelefonoChange,
             label = "Teléfono",
-            keyboardType = KeyboardType.Phone
+            keyboardType = KeyboardType.Phone,
+            isError = errors.containsKey("telefono"),
+            errorMessage = errors["telefono"]
         )
 
         ProfileTextField(
             value = dni,
             onValueChange = onDniChange,
             label = "DNI",
-            keyboardType = KeyboardType.Number
+            keyboardType = KeyboardType.Number,
+            isError = errors.containsKey("dni"),
+            errorMessage = errors["dni"]
         )
 
         ProfileTextField(
             value = fechaNacimiento,
             onValueChange = onFechaNacimientoChange,
             label = "Fecha de Nacimiento",
-            placeholder = "AAAA-MM-DD"
+            placeholder = "AAAA-MM-DD",
+            isError = errors.containsKey("fechaNacimiento"),
+            errorMessage = errors["fechaNacimiento"]
         )
     }
 }
@@ -215,16 +307,72 @@ private fun ProfileTextField(
     label: String,
     required: Boolean = false,
     keyboardType: KeyboardType = KeyboardType.Text,
-    placeholder: String? = null
+    placeholder: String? = null,
+    isError: Boolean = false,
+    errorMessage: String? = null
 ) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        label = { Text("$label${if (required) " *" else ""}") },
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        placeholder = placeholder?.let { { Text(it) } }
-    )
+    Column {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text("$label${if (required) " *" else ""}") },
+            modifier = Modifier.fillMaxWidth(),
+            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            placeholder = placeholder?.let { { Text(it) } },
+            isError = isError,
+            supportingText = {
+                if (isError) {
+                    Text(text = errorMessage ?: "Campo inválido")
+                }
+            }
+        )
+    }
+}
+
+private fun validateForm(
+    nombre: String,
+    apellido: String,
+    telefono: String,
+    dni: String,
+    fechaNacimiento: String
+): Boolean {
+    val errors = mutableMapOf<String, String>()
+
+    if (nombre.isBlank()) {
+        errors["nombre"] = "El nombre es requerido"
+    }
+
+    if (apellido.isBlank()) {
+        errors["apellido"] = "El apellido es requerido"
+    }
+
+    if (telefono.isNotBlank() && !telefono.all { it.isDigit() }) {
+        errors["telefono"] = "Solo números permitidos"
+    }
+
+    if (dni.isNotBlank() && !dni.all { it.isDigit() }) {
+        errors["dni"] = "Solo números permitidos"
+    }
+
+    if (fechaNacimiento.isNotBlank() && !isValidDate(fechaNacimiento)) {
+        errors["fechaNacimiento"] = "Formato AAAA-MM-DD"
+    }
+
+    return errors.isEmpty()
+}
+
+private fun isValidDate(date: String): Boolean {
+    return try {
+        val parts = date.split("-")
+        parts.size == 3 && parts[0].length == 4 && parts[1].length == 2 && parts[2].length == 2
+    } catch (e: Exception) {
+        false
+    }
+}
+
+private fun parseUpdateErrors(errorMessage: String): Map<String, String> {
+    // Implement parsing logic based on your API error responses
+    return emptyMap()
 }
 
 @Preview

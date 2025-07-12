@@ -1,18 +1,9 @@
 package com.pgc.stresspredict.data.api
 
-import com.pgc.stresspredict.data.model.request.AuthLoginRequest
-import com.pgc.stresspredict.data.model.request.PerfilUsuarioUpdateRequest
-import com.pgc.stresspredict.data.model.response.AuthResponse
-import com.pgc.stresspredict.data.model.request.UsuarioFormRequest
-import com.pgc.stresspredict.data.model.response.PerfilUsuarioResponse
-import com.pgc.stresspredict.data.model.request.FormularioEstresRequest
-import com.pgc.stresspredict.data.model.response.PrediccionEstresResponse
+import com.pgc.stresspredict.data.model.request.*
+import com.pgc.stresspredict.data.model.response.*
 import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.PATCH
-import retrofit2.http.POST
+import retrofit2.http.*
 
 interface ApiService {
 
@@ -27,18 +18,19 @@ interface ApiService {
     ): Response<AuthResponse>
 
     @GET("api/usuarios/perfil")
-    suspend fun getPerfil(@Header("Authorization") token: String): PerfilUsuarioResponse
+    suspend fun getPerfil(
+        @Header("Authorization") token: String
+    ): Response<PerfilUsuarioResponse>  // Añadido Response<>
 
     @PATCH("api/usuarios/perfil")
     suspend fun updatePerfilUsuario(
         @Header("Authorization") token: String,
         @Body updateRequest: PerfilUsuarioUpdateRequest
-    )
+    ): Response<PerfilUsuarioResponse>  // Añadido tipo de retorno
 
     @POST("api/ml/predict")
     suspend fun predecirEstres(
         @Header("Authorization") token: String,
         @Body request: FormularioEstresRequest
     ): Response<PrediccionEstresResponse>
-
 }

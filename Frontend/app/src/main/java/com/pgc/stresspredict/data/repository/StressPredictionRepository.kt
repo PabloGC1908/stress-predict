@@ -18,47 +18,74 @@ class StressPredictionRepository @Inject constructor(
     @MLApiService private val mlApiService: ApiService,
     private val sessionManager: SessionManager
 ) {
+    companion object {
+        private const val AUTH_ERROR = "Authentication required"
+        private const val SERVER_ERROR = "Server error"
+        private const val NETWORK_ERROR = "Network error"
+        private const val UNKNOWN_ERROR = "Unknown error"
+    }
 
     suspend fun predictStress(
         formData: FormularioEstresRequest
     ): NetworkResult<PrediccionEstresResponse> {
         return withContext(Dispatchers.IO) {
             try {
-                // 1. Obtener token seguro
+                // 1. Validate session and get token
                 val token = sessionManager.getAuthToken()
                     ?: return@withContext NetworkResult.Error(
-                        message = "Usuario no autenticado",
+                        message = AUTH_ERROR,
                         code = 401
                     )
 
-                // 2. Llamar al modelo de IA
-                val prediction = mlApiService.predecirEstres(
-                    token = "Bearer $token",
+                // 2. Validate input data
+                validateInputData(formData)
+
+                // 3. Make API call
+                val response = mlApiService.predecirEstres(
+                    token = sessionManager.getAuthHeader(),
                     request = formData
                 )
 
-                // 3. Retornar resultado exitoso
-                NetworkResult.Success(prediction)
-
-            } catch (e: HttpException) {
-                // Errores HTTP (4xx/5xx)
-                NetworkResult.Error(
-                    message = "Error en el servidor: ${e.message()}",
-                    code = e.code()
-                )
-            } catch (e: IOException) {
-                // Fallos de red
-                NetworkResult.Error(
-                    message = "Error de conexión. Verifica tu internet",
-                    code = null
-                )
+                // 4. Validate response
+                if (response.isSuccessful) {
+                    response.body()?.let { prediction ->
+                        NetworkResult.Success(prediction)
+                    } ?: NetworkResult.Error(
+                        message = "Empty response body",
+                        code = response.code()
+                    )
+                } else {
+                    handleErrorResponse(response.code(), response.errorBody()?.toString())
+                }
             } catch (e: Exception) {
-                // Otros errores inesperados
-                NetworkResult.Error(
-                    message = "Error inesperado: ${e.message ?: "Intenta nuevamente"}",
-                    code = null
-                )
-            } as NetworkResult.Error
+                handleException(e)
+            }
+        }
+    }
+
+    private fun validateInputData(formData: FormularioEstresRequest) {
+        // Add your validation logic here
+        // Example: require(formData.horasSueno > 0) { "Sleep hours must be positive" }
+    }
+
+    private fun handleErrorResponse(code: Int, errorBody: String?): NetworkResult.Error {
+        return when (code) {
+            401 -> {
+                sessionManager.logout()
+                NetworkResult.Error("Session expired", 401)
+            }
+            400 -> NetworkResult.Error("Invalid request: $errorBody", 400)
+            500 -> NetworkResult.Error(SERVER_ERROR, 500)
+            else -> NetworkResult.Error("Error $code: $errorBody", code)
+        }
+    }
+
+    private fun handleException(e: Exception): NetworkResult.Error {
+        return when (e) {
+            is HttpException -> handleErrorResponse(e.code(), e.message())
+            is IOException -> NetworkResult.Error(NETWORK_ERROR, null)
+            is IllegalArgumentException -> NetworkResult.Error(e.message ?: "Invalid data", 400)
+            else -> NetworkResult.Error(e.message ?: UNKNOWN_ERROR, null)
         }
     }
 }
